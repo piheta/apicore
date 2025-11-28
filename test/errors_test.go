@@ -180,7 +180,7 @@ func TestMapError(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := gokit.MapError(tt.err)
+			result := gokit.MapError(tt.err, nil)
 			if tt.err == nil {
 				if result != nil {
 					t.Errorf("MapError(nil) should return nil, got %v", result)
@@ -209,7 +209,7 @@ func TestMapError_UnmarshalTypeError(t *testing.T) {
 		t.Fatal("Expected unmarshal error, got nil")
 	}
 
-	result := gokit.MapError(err)
+	result := gokit.MapError(err, nil)
 	if result.Status() != 400 {
 		t.Errorf("Status() = %d, want 400", result.Status())
 	}

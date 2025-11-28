@@ -8,7 +8,13 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 )
+
+type contextKey string
+
+// OriginalErrorContextKey is the key for storing the original error in request context.
+const OriginalErrorContextKey contextKey = "OriginalError"
 
 // APIError represents an API error with HTTP status code, type, and message.
 type APIError struct {
@@ -50,9 +56,16 @@ func NewError(code int, errtype string, message any) *APIError {
 }
 
 // MapError converts various error types to APIError with appropriate HTTP status codes and messages.
-func MapError(err error) *APIError {
+func MapError(err error, r *http.Request) *APIError {
 	if err == nil {
 		return nil
+	}
+
+	// Store the original error in context for RouterRequestLogger
+	// It will log the metadata
+	if r != nil {
+		ctx := context.WithValue(r.Context(), OriginalErrorContextKey, err)
+		*r = *r.WithContext(ctx)
 	}
 
 	if apiErr, ok := err.(*APIError); ok {

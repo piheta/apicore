@@ -17,3 +17,9 @@ func JSON(w http.ResponseWriter, statusCode int, data any) error {
 
 	return nil
 }
+
+// Status writes the HTTP status code without a response body.
+func Status(w http.ResponseWriter, statusCode int) error {
+	w.WriteHeader(statusCode)
+	return nil
+}
