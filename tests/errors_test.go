@@ -10,6 +10,27 @@ import (
 	"github.com/piheta/apicore/metaerr"
 )
 
+// mockFieldError simulates a validator.FieldError for testing
+type mockFieldError struct {
+	field string
+	tag   string
+}
+
+func (m mockFieldError) Field() string {
+	return m.field
+}
+
+func (m mockFieldError) Tag() string {
+	return m.tag
+}
+
+// mockValidationErrors simulates validator.ValidationErrors (a slice)
+type mockValidationErrors []mockFieldError
+
+func (m mockValidationErrors) Error() string {
+	return "validation error"
+}
+
 func TestAPIError_Error(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -263,5 +284,57 @@ func TestMapError_WithMetadata(t *testing.T) {
 				t.Errorf("Error() = %q, want %q", result.Error(), tt.expectedMsg)
 			}
 		})
+	}
+}
+
+func TestMapError_ValidationError(t *testing.T) {
+	// Create mock validation errors
+	mockErrors := mockValidationErrors{
+		mockFieldError{field: "Email", tag: "required"},
+		mockFieldError{field: "Age", tag: "min"},
+	}
+
+	result := apierr.MapError(mockErrors, nil)
+	if result.Status() != 422 {
+		t.Errorf("Status() = %d, want 422", result.Status())
+	}
+	if result.Type != "validation" {
+		t.Errorf("Type = %q, want validation", result.Type)
+	}
+
+	// Check that message is a map with field errors
+	fieldErrors, ok := result.Message.(map[string]string)
+	if !ok {
+		t.Errorf("Message should be map[string]string, got %T", result.Message)
+	}
+
+	// Should have errors for both email and age fields
+	if _, hasEmail := fieldErrors["email"]; !hasEmail {
+		t.Error("Expected email field error, got none")
+	}
+	if _, hasAge := fieldErrors["age"]; !hasAge {
+		t.Error("Expected age field error, got none")
+	}
+}
+
+func TestMapError_ValidationError_NestedFields(t *testing.T) {
+	// Create mock validation errors
+	mockErrors := mockValidationErrors{
+		mockFieldError{field: "Name", tag: "required"},
+		mockFieldError{field: "City", tag: "required"},
+	}
+
+	result := apierr.MapError(mockErrors, nil)
+	fieldErrors, ok := result.Message.(map[string]string)
+	if !ok {
+		t.Errorf("Message should be map[string]string, got %T", result.Message)
+	}
+
+	// Should extract just the field name (lowercase)
+	if _, hasCity := fieldErrors["city"]; !hasCity {
+		t.Error("Expected city field error, got none")
+	}
+	if _, hasName := fieldErrors["name"]; !hasName {
+		t.Error("Expected name field error, got none")
 	}
 }

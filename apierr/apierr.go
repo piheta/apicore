@@ -9,6 +9,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"reflect"
+	"strings"
 )
 
 type contextKey string
@@ -82,6 +84,15 @@ func MapError(err error, r *http.Request) *APIError {
 		return NewError(400, "json", "empty or incomplete JSON body")
 	}
 
+	// Check if it's a validation error by checking if it's a slice with Field/Tag methods
+	if errVal := reflect.ValueOf(err); errVal.Kind() == reflect.Slice && errVal.Len() > 0 {
+		// Check if the first element has Field and Tag methods
+		if elem := errVal.Index(0); elem.MethodByName("Field").IsValid() && elem.MethodByName("Tag").IsValid() {
+			formattedErrors := formatValidationErrors(err)
+			return NewError(422, "validation", formattedErrors)
+		}
+	}
+
 	if errors.Is(err, context.Canceled) {
 		return NewError(499, "canceled", "request cancelled")
 	}
@@ -92,4 +103,37 @@ func MapError(err error, r *http.Request) *APIError {
 
 	slog.With("error", err).Error("Error missed mappers!")
 	return NewError(500, "internal", "internal server error")
+}
+
+func formatValidationErrors(err error) map[string]string {
+	formattedErrors := make(map[string]string)
+
+	// Use reflection to iterate through the validation errors
+	// validator.ValidationErrors is a []FieldError
+	errVal := reflect.ValueOf(err)
+	if errVal.Kind() != reflect.Slice {
+		return formattedErrors
+	}
+
+	for i := 0; i < errVal.Len(); i++ {
+		elem := errVal.Index(i)
+		// Each element should have Field() and Tag() methods
+		fieldMethod := elem.MethodByName("Field")
+		tagMethod := elem.MethodByName("Tag")
+
+		if !fieldMethod.IsValid() || !tagMethod.IsValid() {
+			continue
+		}
+
+		fieldResult := fieldMethod.Call(nil)
+		tagResult := tagMethod.Call(nil)
+
+		if len(fieldResult) > 0 && len(tagResult) > 0 {
+			fieldName := strings.ToLower(fieldResult[0].String())
+			tag := tagResult[0].String()
+			formattedErrors[fieldName] = tag
+		}
+	}
+
+	return formattedErrors
 }
