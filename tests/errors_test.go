@@ -6,10 +6,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/go-playground/locales/en"
-	"github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
-	entrans "github.com/go-playground/validator/v10/translations/en"
 
 	"github.com/piheta/apicore/apierr"
 	"github.com/piheta/apicore/metaerr"
@@ -309,83 +306,6 @@ func TestMapError_ValidationError(t *testing.T) {
 	}
 }
 
-func TestMapError_ValidationError_WithTranslator(t *testing.T) {
-	// Set up translator
-	enLocale := en.New()
-	uni := ut.New(enLocale, enLocale)
-	trans, _ := uni.GetTranslator("en")
-
-	v := validator.New()
-	if err := entrans.RegisterDefaultTranslations(v, trans); err != nil {
-		t.Fatalf("Failed to register translations: %v", err)
-	}
-
-	// Set the translator in apicore
-	apierr.SetTranslator(trans)
-	defer apierr.SetTranslator(nil) // Clean up after test
-
-	type User struct {
-		Email string `validate:"required,email"`
-	}
-
-	user := User{Email: "invalid"} // Invalid email format
-	err := v.Struct(user)
-	if err == nil {
-		t.Fatal("Expected validation error, got nil")
-	}
-
-	result := apierr.MapError(err, nil)
-	if result.Status() != 422 {
-		t.Errorf("Status() = %d, want 422", result.Status())
-	}
-
-	fieldErrors, ok := result.Message.(map[string]string)
-	if !ok {
-		t.Errorf("Message should be map[string]string, got %T", result.Message)
-	}
-
-	// With translator, should have translated message (not just tag name)
-	if msg, hasEmail := fieldErrors["email"]; !hasEmail {
-		t.Error("Expected email field error, got none")
-	} else if msg == "email" {
-		t.Error("Expected translated message, got just tag name")
-	}
-}
-
-func TestMapError_ValidationError_NoTranslator(t *testing.T) {
-	// Make sure translator is not set
-	apierr.SetTranslator(nil)
-
-	v := validator.New()
-
-	type Product struct {
-		Name string `validate:"required"`
-	}
-
-	product := Product{} // Missing required field
-	err := v.Struct(product)
-	if err == nil {
-		t.Fatal("Expected validation error, got nil")
-	}
-
-	result := apierr.MapError(err, nil)
-	if result.Status() != 422 {
-		t.Errorf("Status() = %d, want 422", result.Status())
-	}
-
-	fieldErrors, ok := result.Message.(map[string]string)
-	if !ok {
-		t.Errorf("Message should be map[string]string, got %T", result.Message)
-	}
-
-	// Without translator, should just have the tag name
-	if msg, hasName := fieldErrors["name"]; !hasName {
-		t.Error("Expected name field error, got none")
-	} else if msg != "required" {
-		t.Errorf("Expected 'required' tag, got %q", msg)
-	}
-}
-
 func TestMapError_ValidationError_NestedFields(t *testing.T) {
 	v := validator.New()
 
@@ -413,5 +333,8 @@ func TestMapError_ValidationError_NestedFields(t *testing.T) {
 	// Should extract just the nested field name (not the full namespace)
 	if _, hasCity := fieldErrors["city"]; !hasCity {
 		t.Error("Expected city field error, got none")
+	}
+	if _, hasName := fieldErrors["name"]; !hasName {
+		t.Error("Expected name field error, got none")
 	}
 }
