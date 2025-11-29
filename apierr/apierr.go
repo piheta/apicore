@@ -61,7 +61,7 @@ func MapError(err error, r *http.Request) *APIError {
 		return nil
 	}
 
-	// Store the original error in context for RouterRequestLogger
+	// Store the original error in context for RequestLogger
 	// It will log the metadata
 	if r != nil {
 		ctx := context.WithValue(r.Context(), OriginalErrorContextKey, err)

@@ -22,19 +22,22 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/piheta/apicore"
+	"github.com/piheta/apicore/apierr"
+	"github.com/piheta/apicore/metaerr"
+	"github.com/piheta/apicore/middleware"
+	"github.com/piheta/apicore/response"
 )
 
 func main() {
 	mux := http.NewServeMux()
 
-    // Register handlers using public middleware
-	mux.Handle("GET /api/ping", apicore.Public(Ping))
-	mux.Handle("GET /api/err", apicore.Public(Err))
+	// Register handlers using public middleware
+	mux.Handle("GET /api/ping", middleware.Public(Ping))
+	mux.Handle("GET /api/err", middleware.Public(Err))
 
 	server := &http.Server{
 		Addr:         ":8082",
-		Handler:      apicore.RouterRequestLogger(mux), // Wrap handlers with logging middleware
+		Handler:      middleware.RequestLogger(mux), // Wrap handlers with logging middleware
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -47,15 +50,15 @@ func main() {
 
 // Working handler
 func Ping(w http.ResponseWriter, r *http.Request) error {
-	return apicore.JSON(w, 200, "pong")
+	return response.JSON(w, 200, "pong")
 }
 
 // Failing handler
 func Err(w http.ResponseWriter, r *http.Request) error {
-	err := apicore.NewError(404, "not_found", "user not found") // APIError (http code, type, message)
+	err := apierr.NewError(404, "not_found", "user not found") // APIError (http code, type, message)
 
-    // MetaErr, wraps error with additional key-value pair metadata for logging
-	return apicore.WithMetadata(err, "user_id", "123", "email", "user@example.com") 
+	// MetaErr, wraps error with additional key-value pair metadata for logging
+	return metaerr.WithMetadata(err, "user_id", "123", "email", "user@example.com")
 }
 ```
 

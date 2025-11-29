@@ -30,8 +30,8 @@ func Public(h APIFunc) http.HandlerFunc {
 	}
 }
 
-// RouterRequestLogger logs HTTP requests with method, path, status, and duration.
-func RouterRequestLogger(next http.Handler) http.Handler {
+// RequestLogger logs HTTP requests with method, path, status, and duration.
+func RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		rr := &responseRecorder{ResponseWriter: w, statusCode: http.StatusOK}
