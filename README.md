@@ -1,7 +1,9 @@
 # apicore
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/piheta/apicore)](https://goreportcard.com/report/github.com/piheta/apicore)
 [![Go Test](https://github.com/piheta/apicore/actions/workflows/test.yml/badge.svg)](https://github.com/piheta/apicore/actions/workflows/test.yml)
 [![Go Lint](https://github.com/piheta/apicore/actions/workflows/lint.yml/badge.svg)](https://github.com/piheta/apicore/actions/workflows/lint.yml)
+[![CodeQL](https://github.com/piheta/apicore/actions/workflows/codeql.yml/badge.svg)](https://github.com/piheta/apicore/security/code-scanning)
 
 A lightweight Go toolkit for building HTTP API services. Provides utilities for error handling, middleware support, and standardized API responses.
 
