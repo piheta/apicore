@@ -61,3 +61,8 @@ func Err(w http.ResponseWriter, r *http.Request) error {
 2025/11/28 22:25:18 INFO REQ status=200 ms=0.09 ip=[::1]:51420 method=GET path=/api/ping
 2025/11/28 22:25:24 WARN REQ status=404 ms=0.16 ip=[::1]:51425 method=GET path=/api/err error_detail="user not found" user_id=123 email=user@example.com error="Not Found"
 ```
+
+## Status
+⚠️ **Pre-release**: This library is under active development.
+Breaking changes may occur before v1.0.0 is released.
+Pin to a specific version when using as a dependency.
