@@ -5,11 +5,12 @@
 [![Go Lint](https://github.com/piheta/apicore/actions/workflows/lint.yml/badge.svg)](https://github.com/piheta/apicore/actions/workflows/lint.yml)
 [![CodeQL](https://github.com/piheta/apicore/actions/workflows/codeql.yml/badge.svg)](https://github.com/piheta/apicore/security/code-scanning)
 
-A lightweight Go toolkit for building HTTP API services. Provides utilities for error handling, middleware support, and standardized API responses.
+A lightweight Go toolkit for building APIs. Provides utilities for structured error handling, error mapping, middleware support, and structured request logging.
 
 ## Features
 
-- **Error handling** - Structured API errors with HTTP status codes
+- **Error handling** - Structured API errors with metadata tracing and propagation.
+- **Logging** - Automatic request logging with error details and metadata extraction.
 - **Middleware support** - Chainable middleware for request processing
 - **Response formatting** - Standardized API response structure
 
@@ -18,9 +19,7 @@ A lightweight Go toolkit for building HTTP API services. Provides utilities for 
 package main
 
 import (
-	"log"
 	"net/http"
-	"time"
 
 	"github.com/piheta/apicore/apierr"
 	"github.com/piheta/apicore/metaerr"
@@ -36,16 +35,11 @@ func main() {
 	mux.Handle("GET /api/err", middleware.Public(Err))
 
 	server := &http.Server{
-		Addr:         ":8082",
+		Addr:         ":8080",
 		Handler:      middleware.RequestLogger(mux), // Wrap handlers with logging middleware
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
 	}
 
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Fatal(err)
-	}
+	server.ListenAndServe()
 }
 
 // Working handler
@@ -55,7 +49,7 @@ func Ping(w http.ResponseWriter, r *http.Request) error {
 
 // Failing handler
 func Err(w http.ResponseWriter, r *http.Request) error {
-	err := apierr.NewError(404, "not_found", "user not found") // APIError (http code, type, message)
+	err := apierr.NewError(404, "not_found", "user not found") // APIError (code, type, msg)
 
 	// MetaErr, wraps error with additional key-value pair metadata for logging
 	return metaerr.WithMetadata(err, "user_id", "123", "email", "user@example.com")
