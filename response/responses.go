@@ -23,3 +23,9 @@ func Status(w http.ResponseWriter, statusCode int) error {
 	w.WriteHeader(statusCode)
 	return nil
 }
+
+// Redirect redirect the user to another url
+func Redirect(w http.ResponseWriter, r *http.Request, destinationURL string) error {
+	http.Redirect(w, r, destinationURL, http.StatusMovedPermanently)
+	return nil
+}
