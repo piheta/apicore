@@ -49,6 +49,9 @@ func RequestLogger(next http.Handler) http.Handler {
 		if !strings.HasPrefix(path, "/api") {
 			return
 		}
+		if strings.HasPrefix(path, "/api/metrics") {
+			return
+		}
 		if method == "OPTIONS" {
 			return
 		}
